@@ -3,19 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 초록 재관람 도장판</title>
+<title>2026 초록 도장판</title>
 
 <style>
-body{font-family:sans-serif;background:#f2f2f2;margin:0;padding:20px;}
-h1{text-align:center;margin-bottom:20px;}
+body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px;}
+h1{text-align:center;}
 .section{background:white;padding:20px;margin:20px 0;border-radius:10px;}
 .board{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;}
-button{padding:8px 12px;margin:5px;cursor:pointer;}
-input,select{padding:5px;margin:5px;}
+button{padding:6px 10px;margin:3px;cursor:pointer;}
+.progress{height:8px;background:#ddd;border-radius:4px;margin-top:5px;}
+.progress-bar{height:8px;background:#2e7d32;border-radius:4px;}
 .table{width:100%;border-collapse:collapse;margin-top:10px;}
-.table th,.table td{border:1px solid #ddd;padding:8px;text-align:center;}
-.progress{height:10px;background:#ddd;border-radius:5px;margin-top:5px;}
-.progress-bar{height:10px;background:#2e7d32;border-radius:5px;}
+.table th,.table td{border:1px solid #ddd;padding:6px;text-align:center;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
+.modal-content{background:white;padding:20px;width:300px;margin:100px auto;border-radius:10px;}
+.wallet-box{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;}
 </style>
 </head>
 <body>
@@ -24,8 +26,15 @@ input,select{padding:5px;margin:5px;}
 
 <div class="section">
 <h2>🎟 할인권 지갑</h2>
-<div>40% 할인권: <span id="coupon40">0</span></div>
-<div>🎁 폴라로이드: <span id="polaroid">0</span></div>
+<div class="wallet-box">
+<strong>40% 할인권</strong><br>
+현재 보유: <span id="current40">0</span>개<br>
+총 획득: <span id="total40">0</span>개
+</div>
+<div class="wallet-box">
+<strong>🎁 폴라로이드</strong><br>
+보유: <span id="polaroid">0</span>개
+</div>
 </div>
 
 <div class="section">
@@ -35,56 +44,59 @@ input,select{padding:5px;margin:5px;}
 </div>
 
 <div class="section">
-<h2>➕ 회차 추가</h2>
-
-날짜 <input type="date" id="date">
-
-할인 
-<select id="discount">
-<option value="none">없음</option>
-<option value="40">40%</option>
-<option value="50">50%</option>
-</select>
-
-도장 적립 배율 
-<select id="multiplier">
-<option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-</select>
-
-도장판 선택 
-<select id="boardSelect"></select>
-
-메모 <input type="text" id="memo">
-
-<button onclick="addVisit()">저장</button>
-
+<h2>📅 관람 기록</h2>
+<button onclick="openModal()">+ 회차 추가</button>
 <table class="table">
 <thead>
 <tr>
 <th>날짜</th>
-<th>할인</th>
+<th>할인사용</th>
 <th>배율</th>
 <th>도장판</th>
 <th>메모</th>
+<th>관리</th>
 </tr>
 </thead>
 <tbody id="visitTable"></tbody>
 </table>
+</div>
 
+<div class="modal" id="modal">
+<div class="modal-content">
+<h3>회차 입력</h3>
+날짜 <input type="date" id="date"><br>
+할인 사용
+<select id="discount">
+<option value="none">없음</option>
+<option value="40">40% 사용</option>
+</select><br>
+도장 배율
+<select id="multiplier">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+</select><br>
+도장판
+<select id="boardSelect"></select><br>
+메모 <input type="text" id="memo"><br><br>
+<button onclick="saveVisit()">저장</button>
+<button onclick="closeModal()">닫기</button>
+</div>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("cholog2026")) || {
+let data = JSON.parse(localStorage.getItem("green2026")) || {
 boards:[],
 visits:[],
-coupon40:0,
+current40:0,
+total40:0,
 polaroid:0
 };
 
+let editIndex=null;
+
 function save(){
-localStorage.setItem("cholog2026",JSON.stringify(data));
+localStorage.setItem("green2026",JSON.stringify(data));
 render();
 }
 
@@ -93,75 +105,112 @@ data.boards.push({stamps:0});
 save();
 }
 
-function addVisit(){
-let date=document.getElementById("date").value;
-let discount=document.getElementById("discount").value;
-let multiplier=parseInt(document.getElementById("multiplier").value);
-let boardIndex=parseInt(document.getElementById("boardSelect").value);
-let memo=document.getElementById("memo").value;
+function openModal(index=null){
+editIndex=index;
+document.getElementById("modal").style.display="block";
+if(index!==null){
+let v=data.visits[index];
+date.value=v.date;
+discount.value=v.discount;
+multiplier.value=v.multiplier;
+boardSelect.value=v.board;
+memo.value=v.memo;
+}
+}
 
-if(!date) return alert("날짜를 입력하세요.");
+function closeModal(){
+document.getElementById("modal").style.display="none";
+editIndex=null;
+}
 
-let board=data.boards[boardIndex];
-if(!board) return;
+function recalc(){
+data.boards.forEach(b=>b.stamps=0);
+data.current40=0;
+data.total40=0;
+data.polaroid=0;
 
-let before=board.stamps;
-let after=Math.min(6,before+multiplier);
-board.stamps=after;
+data.visits.forEach(v=>{
+let b=data.boards[v.board];
+if(!b) return;
+let before=b.stamps;
+let after=Math.min(6,before+parseInt(v.multiplier));
+b.stamps=after;
 
-if(before<3 && after>=3) data.coupon40++;
-if(before<6 && after>=6) data.polaroid++;
+if(before<3 && after>=3){
+data.current40++;
+data.total40++;
+}
+if(before<6 && after>=6){
+data.polaroid++;
+}
+if(v.discount==="40"){
+data.current40--;
+}
+});
+}
 
-data.visits.push({date,discount,multiplier,boardIndex,memo});
+function saveVisit(){
+let v={
+date:date.value,
+discount:discount.value,
+multiplier:multiplier.value,
+board:parseInt(boardSelect.value),
+memo:memo.value
+};
+if(!v.date) return alert("날짜 입력");
+
+if(editIndex!==null){
+data.visits[editIndex]=v;
+}else{
+data.visits.push(v);
+}
+
+recalc();
+save();
+closeModal();
+}
+
+function deleteVisit(i){
+data.visits.splice(i,1);
+recalc();
 save();
 }
 
 function render(){
-document.getElementById("coupon40").innerText=data.coupon40;
-document.getElementById("polaroid").innerText=data.polaroid;
+recalc();
+current40.innerText=data.current40;
+total40.innerText=data.total40;
+polaroid.innerText=data.polaroid;
 
-let boardsDiv=document.getElementById("boards");
-boardsDiv.innerHTML="";
-let select=document.getElementById("boardSelect");
-select.innerHTML="";
-
+boards.innerHTML="";
+boardSelect.innerHTML="";
 data.boards.forEach((b,i)=>{
-let div=document.createElement("div");
-div.className="board";
-div.innerHTML=`
+boards.innerHTML+=`
+<div class="board">
 <h3>도장판 ${i+1}</h3>
-<div>${b.stamps} / 6</div>
+${b.stamps} / 6
 <div class="progress">
 <div class="progress-bar" style="width:${(b.stamps/6)*100}%"></div>
 </div>
-<button onclick="deleteBoard(${i})">삭제</button>
-`;
-boardsDiv.appendChild(div);
-
-let option=document.createElement("option");
-option.value=i;
-option.text="도장판 "+(i+1);
-select.appendChild(option);
+</div>`;
+boardSelect.innerHTML+=`<option value="${i}">도장판 ${i+1}</option>`;
 });
 
-let table=document.getElementById("visitTable");
-table.innerHTML="";
-data.visits.forEach(v=>{
-let row=document.createElement("tr");
-row.innerHTML=`
+visitTable.innerHTML="";
+data.visits.forEach((v,i)=>{
+visitTable.innerHTML+=`
+<tr>
 <td>${v.date}</td>
-<td>${v.discount}</td>
+<td>${v.discount==="40"?"40% 사용":"없음"}</td>
 <td>${v.multiplier}</td>
-<td>${v.boardIndex+1}</td>
-<td>${v.memo}</td>
-`;
-table.appendChild(row);
+<td>${v.board+1}</td>
+<td>${v.memo||""}</td>
+<td>
+<button onclick="openModal(${i})">수정</button>
+<button onclick="deleteVisit(${i})">삭제</button>
+</td>
+</tr>`;
 });
-}
-
-function deleteBoard(index){
-data.boards.splice(index,1);
-save();
 }
 
 render();
