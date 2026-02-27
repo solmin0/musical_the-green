@@ -291,9 +291,8 @@ function deleteVisit(i){
 
 /* ---------------- 낮/밤 ---------------- */
 
-function toggleHoliday(){
-  const box=document.getElementById("timeSelectBox");
-  box.style.display=document.getElementById("holidayCheck").checked?"flex":"none";
+function toggleHoliday() {
+    document.getElementById("vTime").classList.toggle("hidden", !document.getElementById("holidayCheck").checked);
 }
 
 function selectTime(val,el){
