@@ -6,121 +6,33 @@
 <title>2026 초록 도장판</title>
 
 <style>
-body{
-margin:0;
-font-family:sans-serif;
-background:#2E8C19;
-color:#333;
-}
-
-header{
-background:white;
-padding:20px;
-text-align:center;
-font-size:24px;
-font-weight:bold;
-box-shadow:0 2px 5px rgba(0,0,0,0.1);
-}
-
-.badge{
-font-size:12px;
-color:#2E8C19;
-}
-
-.container{
-padding:20px;
-}
-
-.card{
-background:white;
-padding:20px;
-border-radius:12px;
-margin-bottom:20px;
-box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-button{
-padding:6px 10px;
-margin:4px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-background:#2E8C19;
-color:white;
-}
-
-input,select{
-padding:6px;
-margin:5px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-
-.board{
-border:1px solid #ddd;
-padding:10px;
-margin:10px 0;
-border-radius:8px;
-}
-
-.progress{
-height:8px;
-background:#eee;
-border-radius:5px;
-margin-top:5px;
-}
-
-.progress-bar{
-height:8px;
-background:#2E8C19;
-border-radius:5px;
-}
-
-.table{
-width:100%;
-border-collapse:collapse;
-}
-
-.table th,.table td{
-border:1px solid #ddd;
-padding:6px;
-text-align:center;
-background:white;
-}
-
-.modal{
-display:none;
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
-background:rgba(0,0,0,0.5);
-}
-
-.modal-content{
-background:white;
-padding:20px;
-width:320px;
-margin:80px auto;
-border-radius:10px;
-}
+body{margin:0;font-family:sans-serif;background:#2E8C19;color:#333;}
+header{background:white;padding:20px;text-align:center;font-size:22px;font-weight:bold;}
+.container{padding:20px;}
+.card{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);}
+.board{border:1px solid #ddd;border-radius:10px;padding:15px;margin-top:15px;}
+.progress{height:8px;background:#eee;border-radius:5px;margin:5px 0;}
+.progress-bar{height:8px;background:#2E8C19;border-radius:5px;}
+button{padding:5px 10px;margin:3px;border:none;border-radius:6px;background:#2E8C19;color:white;cursor:pointer;}
+input,select{padding:5px;margin:5px;border-radius:6px;border:1px solid #ccc;}
+.visit{background:#f9f9f9;border-radius:6px;padding:8px;margin-top:5px;font-size:13px;}
+.add-box{background:white;padding:15px;border-radius:12px;position:fixed;bottom:0;width:100%;left:0;box-shadow:0 -3px 10px rgba(0,0,0,0.2);}
 </style>
 </head>
-
 <body>
 
 <header>
 🌿 2026 초록 재관람 도장판
-<div class="badge">자동 저장됨</div>
+<div style="font-size:12px;color:#2E8C19;">자동 저장됨</div>
 </header>
 
 <div class="container">
 
 <div class="card">
 <h3>🎟 할인권 지갑</h3>
-40% 할인권<br>
-현재 보유: <span id="current40">0</span><br>
-총 획득: <span id="total40">0</span><br><br>
-🎁 폴라로이드: <span id="polaroid">0</span>
+40% 할인권 현재: <b id="current40">0</b> /
+총 누적: <b id="total40">0</b><br>
+🎁 폴라로이드 누적: <b id="polaroid">0</b>
 </div>
 
 <div class="card">
@@ -129,33 +41,13 @@ border-radius:10px;
 <div id="boards"></div>
 </div>
 
-<div class="card">
-<h3>📅 관람 기록</h3>
-<button onclick="openModal()">+ 회차 추가</button>
-<table class="table">
-<thead>
-<tr>
-<th>날짜</th>
-<th>할인</th>
-<th>배율</th>
-<th>도장판</th>
-<th>메모</th>
-<th>관리</th>
-</tr>
-</thead>
-<tbody id="visitTable"></tbody>
-</table>
 </div>
 
-</div>
-
-<div class="modal" id="modal">
-<div class="modal-content">
-<h3>회차 입력</h3>
-
-날짜 <input type="date" id="date"><br>
-
-할인 종류
+<div class="add-box">
+<button onclick="toggleForm()">+ 회차 추가</button>
+<div id="formArea" style="display:none;margin-top:10px;">
+날짜 <input type="date" id="date">
+할인
 <select id="discount">
 <option>재관(30%)</option>
 <option>40%할인</option>
@@ -163,31 +55,24 @@ border-radius:10px;
 <option>증빙 프리패스</option>
 <option>교환</option>
 <option>기타</option>
-</select><br>
-
-도장 배율
+</select>
+배율
 <select id="multiplier">
 <option value="1">1</option>
 <option value="2">2</option>
 <option value="3">3</option>
-</select><br>
-
-도장판 선택
-<select id="boardSelect"></select><br>
-
-새 도장판 이름
-<input type="text" id="newBoardName">
-<button onclick="createBoardFromModal()">추가</button><br>
-
-메모 <input type="text" id="memo"><br><br>
-
+</select>
+도장판
+<select id="boardSelect"></select>
+새 도장판 이름 <input type="text" id="newBoard">
+<button onclick="createBoard()">추가</button>
+메모 <input type="text" id="memo">
 <button onclick="saveVisit()">저장</button>
-<button onclick="closeModal()">닫기</button>
 </div>
 </div>
 
 <script>
-let data=JSON.parse(localStorage.getItem("green2026v2"))||{
+let data=JSON.parse(localStorage.getItem("greenFinal"))||{
 boards:[],
 visits:[],
 current40:0,
@@ -195,33 +80,24 @@ total40:0,
 polaroid:0
 };
 
-let editIndex=null;
-
 function save(){
-localStorage.setItem("green2026v2",JSON.stringify(data));
+localStorage.setItem("greenFinal",JSON.stringify(data));
 render();
 }
 
 function addBoard(name="새 도장판"){
-data.boards.push({name:name,stamps:0});
+data.boards.push({name,stamps:0});
 save();
 }
 
-function createBoardFromModal(){
-let name=document.getElementById("newBoardName").value;
-if(!name) return;
-addBoard(name);
-newBoardName.value="";
+function createBoard(){
+if(!newBoard.value)return;
+addBoard(newBoard.value);
+newBoard.value="";
 }
 
-function openModal(i=null){
-editIndex=i;
-modal.style.display="block";
-}
-
-function closeModal(){
-modal.style.display="none";
-editIndex=null;
+function toggleForm(){
+formArea.style.display=formArea.style.display==="none"?"block":"none";
 }
 
 function recalc(){
@@ -232,7 +108,7 @@ data.polaroid=0;
 
 data.visits.forEach(v=>{
 let b=data.boards[v.board];
-if(!b) return;
+if(!b)return;
 let before=b.stamps;
 let after=Math.min(6,before+parseInt(v.multiplier));
 b.stamps=after;
@@ -244,9 +120,7 @@ data.total40++;
 if(before<6 && after>=6){
 data.polaroid++;
 }
-if(v.discount==="40%할인"){
-data.current40--;
-}
+if(v.discount==="40%할인") data.current40--;
 });
 }
 
@@ -258,16 +132,10 @@ multiplier:multiplier.value,
 board:parseInt(boardSelect.value),
 memo:memo.value
 };
-if(!v.date) return alert("날짜 입력");
-
-if(editIndex!==null){
-data.visits[editIndex]=v;
-}else{
+if(!v.date)return alert("날짜 입력");
 data.visits.push(v);
-}
 recalc();
 save();
-closeModal();
 }
 
 function deleteVisit(i){
@@ -284,7 +152,6 @@ save();
 
 function render(){
 recalc();
-
 current40.innerText=data.current40;
 total40.innerText=data.total40;
 polaroid.innerText=data.polaroid;
@@ -293,32 +160,38 @@ boards.innerHTML="";
 boardSelect.innerHTML="";
 
 data.boards.forEach((b,i)=>{
-boards.innerHTML+=`
-<div class="board">
+let boardDiv=document.createElement("div");
+boardDiv.className="board";
+
+let relatedVisits=data.visits.filter(v=>v.board===i);
+let visitHTML="";
+let cumulative=0;
+
+relatedVisits.forEach((v,idx)=>{
+cumulative+=parseInt(v.multiplier);
+visitHTML+=`
+<div class="visit">
+${v.date} | ${v.discount} | +${v.multiplier}
+| 누적 ${Math.min(cumulative,6)}
+<button onclick="deleteVisit(${data.visits.indexOf(v)})">삭제</button>
+</div>`;
+});
+
+boardDiv.innerHTML=`
 <input value="${b.name}" onchange="renameBoard(${i},this.value)">
+<button onclick="deleteBoard(${i})">삭제</button>
 <div>${b.stamps}/6</div>
 <div class="progress">
 <div class="progress-bar" style="width:${(b.stamps/6)*100}%"></div>
 </div>
-<button onclick="deleteBoard(${i})">삭제</button>
-</div>`;
-boardSelect.innerHTML+=`<option value="${i}">${b.name}</option>`;
-});
+<div>🎟 생성된 40%: ${b.stamps>=3?1:0} /
+🎁 생성된 폴라: ${b.stamps>=6?1:0}</div>
+${visitHTML}
+`;
 
-visitTable.innerHTML="";
-data.visits.forEach((v,i)=>{
-visitTable.innerHTML+=`
-<tr>
-<td>${v.date}</td>
-<td>${v.discount}</td>
-<td>${v.multiplier}</td>
-<td>${data.boards[v.board]?.name||""}</td>
-<td>${v.memo||""}</td>
-<td>
-<button onclick="openModal(${i})">수정</button>
-<button onclick="deleteVisit(${i})">삭제</button>
-</td>
-</tr>`;
+boards.appendChild(boardDiv);
+
+boardSelect.innerHTML+=`<option value="${i}">${b.name}</option>`;
 });
 }
 
