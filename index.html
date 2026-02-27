@@ -3,119 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STONE 2026</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
+<title>재관람 도장판</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: 'Noto Sans KR', sans-serif;
-    background-color: #111;
-    color: white;
-    text-align: center;
+body{
+    font-family: sans-serif;
+    background:#111;
+    color:white;
+    text-align:center;
+    margin:0;
+    padding:30px;
 }
 
-header {
-    background: url('https://images.unsplash.com/photo-1503095396549-807759245b35') no-repeat center;
-    background-size: cover;
-    height: 90vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+h1{margin-bottom:30px;}
+
+button{
+    padding:8px 15px;
+    margin:5px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
 }
 
-header h1 {
-    font-size: 4em;
-    margin: 0;
+.add-btn{background:crimson;color:white;}
+.delete-btn{background:#444;color:white;}
+.stamp-btn{background:gold;color:black;}
+
+.board{
+    border:1px solid #333;
+    margin:20px auto;
+    padding:20px;
+    width:300px;
+    border-radius:10px;
+    background:#1e1e1e;
 }
 
-header p {
-    font-size: 1.5em;
-    margin-top: 10px;
+.stamps{
+    font-size:24px;
+    margin:15px 0;
 }
 
-.section {
-    padding: 80px 20px;
+.reward{
+    margin-top:10px;
+    font-weight:bold;
+    color:gold;
 }
-
-.section h2 {
-    font-size: 2.5em;
-    margin-bottom: 30px;
-}
-
-.cast-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 30px;
-    max-width: 900px;
-    margin: auto;
-}
-
-.cast-card {
-    background-color: #222;
-    padding: 20px;
-    border-radius: 10px;
-}
-
-.button {
-    display: inline-block;
-    margin-top: 30px;
-    padding: 15px 30px;
-    background-color: crimson;
-    color: white;
-    text-decoration: none;
-    border-radius: 30px;
-    font-weight: bold;
-}
-
-footer {
-    padding: 40px;
-    background-color: #000;
-    font-size: 0.9em;
+select,input{
+    padding:5px;
+    margin:5px;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-    <h1>STONE 2026</h1>
-    <p>2026.02.10 - 2026.04.26</p>
-</header>
+<h1>🎭 재관람 도장판</h1>
 
-<section class="section">
-    <h2>공연 소개</h2>
-    <p>
-        운명처럼 마주한 인물들, 그들의 선택이 만들어내는 이야기.<br>
-        뮤지컬 <strong>STONE</strong>이 2026년 무대에 오릅니다.
-    </p>
-</section>
+<div>
+    <button class="add-btn" onclick="addBoard()">도장판 추가</button>
+</div>
 
-<section class="section">
-    <h2>CAST</h2>
-    <div class="cast-grid">
-        <div class="cast-card">
-            <h3>사이먼</h3>
-            <p>배우 A</p>
-        </div>
-        <div class="cast-card">
-            <h3>코스모</h3>
-            <p>배우 B</p>
-        </div>
-        <div class="cast-card">
-            <h3>마이클</h3>
-            <p>배우 C</p>
-        </div>
-    </div>
+<hr>
 
-    <a href="#" class="button">예매하기</a>
-</section>
+<h2>예매 회차 추가</h2>
 
-<footer>
-    © 2026 STONE Musical. All Rights Reserved.
-</footer>
+<select id="boardSelect"></select>
+<input type="number" id="stampCount" min="1" value="1">
+<button class="stamp-btn" onclick="addStamp()">도장 추가</button>
+
+<div id="boards"></div>
+
+<script>
+let boards = [];
+let boardId = 0;
+
+function addBoard(){
+    const id = boardId++;
+    boards.push({id:id, stamps:0});
+    render();
+}
+
+function deleteBoard(id){
+    boards = boards.filter(b=>b.id!==id);
+    render();
+}
+
+function addStamp(){
+    const boardId = parseInt(document.getElementById("boardSelect").value);
+    const count = parseInt(document.getElementById("stampCount").value);
+
+    const board = boards.find(b=>b.id===boardId);
+    if(board){
+        board.stamps += count;
+        render();
+    }
+}
+
+function render(){
+    const container = document.getElementById("boards");
+    const select = document.getElementById("boardSelect");
+    container.innerHTML="";
+    select.innerHTML="";
+
+    boards.forEach(board=>{
+        const div = document.createElement("div");
+        div.className="board";
+
+        let rewardText="";
+        if(board.stamps>=6){
+            rewardText="🎁 6회차 달성! 폴라로이드 증정";
+        }else if(board.stamps>=3){
+            rewardText="🎫 3회차 달성! 40% 할인권 증정";
+        }
+
+        div.innerHTML=`
+            <h3>도장판 #${board.id}</h3>
+            <div class="stamps">${"⭐".repeat(board.stamps)}</div>
+            <div>총 ${board.stamps}회 관람</div>
+            <div class="reward">${rewardText}</div>
+            <button class="delete-btn" onclick="deleteBoard(${board.id})">삭제</button>
+        `;
+
+        container.appendChild(div);
+
+        const option=document.createElement("option");
+        option.value=board.id;
+        option.text="도장판 #"+board.id;
+        select.appendChild(option);
+    });
+}
+</script>
 
 </body>
 </html>
