@@ -14,19 +14,49 @@ header{background:#f3f5f4;padding:25px;text-align:center;font-size:20px;font-wei
 .section{background:#f3f5f4;padding:18px;margin-bottom:20px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);}
 h3{font-weight:600;margin-top:0;display:flex;align-items:center;font-size:15px;}
 .circle{display:inline-block;width:6px;height:6px;border:1.5px solid #2E8C19;border-radius:50%;margin-right:8px;}
-.board-card{background:white;padding:12px;border-radius:6px;margin-bottom:12px;border:1px solid #ddd;}
-.progress{height:5px;background:#ddd;margin-top:8px;border-radius:5px;overflow:hidden;}
-.bar{height:5px;background:#2E8C19;}
+
 button{background:#2E8C19;color:white;border:none;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:12px;}
 .small-btn{padding:3px 6px;font-size:10px;}
+
 table{width:100%;border-collapse:collapse;background:white;font-size:11px;}
 th,td{border:1px solid #eee;padding:8px 4px;text-align:center;}
 th{background:#f9f9f9;font-weight:500;}
+
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center;z-index:1000;}
 .modal-content{background:white;padding:20px;width:90%;max-width:360px;border-radius:12px;}
+
+#boardModal{z-index:2000;} /* 새 도장판이 항상 위 */
+
 input,select{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;font-family:'SUIT';}
+
 .flex-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .icon-btn{background:none;color:#333;padding:2px;font-size:15px;}
+
+.board-card{background:white;padding:12px;border-radius:6px;margin-bottom:12px;border:1px solid #ddd;}
+.progress{height:5px;background:#ddd;margin-top:8px;border-radius:5px;overflow:hidden;}
+.bar{height:5px;background:#2E8C19;}
+
+/* 혜택 카드 디자인 */
+.benefit-container{display:flex;gap:10px;margin-top:10px;}
+.benefit-card{background:white;border:1px solid #ddd;border-radius:6px;flex:1;padding:12px;text-align:center;}
+.benefit-title{font-size:11px;color:#666;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:6px;}
+.benefit-value{font-size:18px;font-weight:bold;color:#2E8C19;}
+.benefit-sub{font-size:10px;color:#999;margin-top:4px;}
+
+/* 낮/밤 버튼 */
+.time-btn{
+flex:1;
+background:white;
+color:#2E8C19;
+border:1px solid #2E8C19;
+border-radius:4px;
+padding:6px;
+font-size:12px;
+}
+.time-btn.active{
+background:#2E8C19;
+color:white;
+}
 </style>
 </head>
 
@@ -36,18 +66,33 @@ input,select{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;bor
 
 <div class="container">
 
+<!-- 도장판 -->
 <div class="section">
 <h3><span class="circle"></span>도장판</h3>
 <div id="boardCards"></div>
 <button onclick="openBoardModal()">도장판 추가</button>
 </div>
 
+<!-- 혜택 (카드형 복구) -->
 <div class="section">
 <h3><span class="circle"></span>혜택</h3>
-<div>40% 할인권 현재: <b id="couponCurrent">0</b> / 누적: <b id="couponTotal">0</b></div>
-<div style="margin-top:5px;">폴라로이드: <b id="polaroidTotal">0</b></div>
+
+<div class="benefit-container">
+  <div class="benefit-card">
+    <div class="benefit-title">40% 할인권</div>
+    <div class="benefit-value" id="couponCurrent">0</div>
+    <div class="benefit-sub">누적 <span id="couponTotal">0</span></div>
+  </div>
+
+  <div class="benefit-card">
+    <div class="benefit-title">폴라로이드</div>
+    <div class="benefit-value" id="polaroidTotal">0</div>
+  </div>
 </div>
 
+</div>
+
+<!-- 상세 기록 -->
 <div class="section">
 <h3><span class="circle"></span>상세 기록</h3>
 <table>
@@ -61,6 +106,7 @@ input,select{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;bor
 </table>
 </div>
 
+<!-- 회차 기록 -->
 <div class="section">
 <h3><span class="circle"></span>회차 기록</h3>
 <div style="overflow-x:auto;">
@@ -102,6 +148,20 @@ input,select{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;bor
 <label>날짜</label>
 <input type="date" id="vDate">
 
+<!-- 체크박스 추가 -->
+<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+  <input type="checkbox" id="holidayCheck" onchange="toggleHoliday()">
+  <label for="holidayCheck" style="margin:0;font-size:12px;">
+    공휴일 낮/밤 직접 선택
+  </label>
+</div>
+
+<div id="timeSelectBox" style="display:none;gap:6px;margin-bottom:10px;">
+  <button type="button" class="time-btn" onclick="selectTime('',this)">미선택</button>
+  <button type="button" class="time-btn" onclick="selectTime('낮',this)">낮</button>
+  <button type="button" class="time-btn" onclick="selectTime('밤',this)">밤</button>
+</div>
+
 <label>할인 권종</label>
 <select id="vDiscount">
 <option>재관(30%)</option>
@@ -135,169 +195,18 @@ input,select{width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;bor
 </div>
 
 <script>
-let data=JSON.parse(localStorage.getItem("greenFinalV2"))||{
-boards:[{name:"도장판 1"}],
-visits:[]
-};
-let editIndex=null;
+let selectedTime="";
 
-function save(){
-localStorage.setItem("greenFinalV2",JSON.stringify(data));
-render();
+function toggleHoliday(){
+document.getElementById("timeSelectBox").style.display=
+document.getElementById("holidayCheck").checked?"flex":"none";
 }
 
-function openBoardModal(){document.getElementById("boardModal").style.display="flex";}
-function closeBoardModal(){document.getElementById("boardModal").style.display="none";}
-function saveBoard(){
-let name=document.getElementById("newBoardName").value.trim();
-if(!name)return alert("이름 입력");
-data.boards.push({name});
-save();
-closeBoardModal();
+function selectTime(val,el){
+selectedTime=val;
+document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("active"));
+el.classList.add("active");
 }
-
-function openVisitModal(){editIndex=null;document.getElementById("visitModal").style.display="flex";}
-function closeVisitModal(){document.getElementById("visitModal").style.display="none";}
-
-function saveVisit(){
-let v={
-date:vDate.value,
-discount:vDiscount.value,
-multi:parseInt(vMulti.value),
-board:parseInt(vBoard.value),
-memo:vMemo.value
-};
-if(!v.date)return alert("날짜 선택");
-if(editIndex!==null)data.visits[editIndex]=v;
-else data.visits.push(v);
-save();
-closeVisitModal();
-}
-
-function editVisit(i){
-let v=data.visits[i];
-editIndex=i;
-vDate.value=v.date;
-vDiscount.value=v.discount;
-vMulti.value=v.multi;
-vBoard.value=v.board;
-vMemo.value=v.memo;
-openVisitModal();
-}
-
-function deleteVisit(i){
-if(confirm("삭제?")){
-data.visits.splice(i,1);
-save();
-}
-}
-
-function render(){
-
-data.visits.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-let boardState=data.boards.map(b=>({name:b.name,stamps:0}));
-let couponCurrent=0,couponTotal=0,polaroid=0;
-let history=[];
-
-visitBody.innerHTML="";
-couponHistory.innerHTML="";
-boardCards.innerHTML="";
-
-data.visits.forEach((v,i)=>{
-let stamps=v.multi;
-let boardIndex=v.board;
-let lines=[];
-
-while(stamps>0){
-let current=boardState[boardIndex];
-let remain=6-current.stamps;
-
-if(stamps<=remain){
-current.stamps+=stamps;
-
-if(current.stamps>=3 && current.stamps-stamps<3){
-couponCurrent++;couponTotal++;
-history.push({date:v.date,type:"40% 획득"});
-}
-stamps=0;
-}else{
-current.stamps+=remain;
-polaroid++;
-history.push({date:v.date,type:"폴라 획득"});
-stamps-=remain;
-boardIndex++;
-if(!boardState[boardIndex]){
-boardState.push({name:"도장판 "+(boardState.length+1),stamps:0});
-}
-}
-}
-
-if(v.discount==="40%할인"){
-couponCurrent--;
-history.push({date:v.date,type:"40% 사용"});
-}
-
-visitBody.innerHTML+=`
-<tr>
-<td>${v.date.slice(5)}</td>
-<td>${v.discount}</td>
-<td>${v.multi} (도장판 ${v.board+1})</td>
-<td>${boardState[v.board].stamps}</td>
-<td>${v.memo||""}</td>
-<td>
-<button class="icon-btn" onclick="editVisit(${i})">✏️</button>
-<button class="icon-btn" onclick="deleteVisit(${i})">🗑️</button>
-</td>
-</tr>`;
-});
-
-boardState.forEach((b,i)=>{
-boardCards.innerHTML+=`
-<div class="board-card">
-<div class="flex-between">
-<strong>${b.name}</strong>
-<div>
-<button class="small-btn" onclick="renameBoard(${i})">이름수정</button>
-</div>
-</div>
-<div>${b.stamps}/6</div>
-<div class="progress">
-<div class="bar" style="width:${(b.stamps/6)*100}%"></div>
-</div>
-</div>`;
-});
-
-history.forEach(h=>{
-couponHistory.innerHTML+=`
-<tr>
-<td>${h.date}</td>
-<td>${h.type}</td>
-</tr>`;
-});
-
-couponCurrent<0?couponCurrent=0:null;
-
-couponCurrentSpan=document.getElementById("couponCurrent");
-couponTotalSpan=document.getElementById("couponTotal");
-polaroidSpan=document.getElementById("polaroidTotal");
-
-couponCurrentSpan.innerText=couponCurrent;
-couponTotalSpan.innerText=couponTotal;
-polaroidSpan.innerText=polaroid;
-
-vBoard.innerHTML="";
-boardState.forEach((b,i)=>{
-vBoard.innerHTML+=`<option value="${i}">${b.name}</option>`;
-});
-}
-
-function renameBoard(i){
-let name=prompt("새 이름 입력",data.boards[i].name);
-if(name){data.boards[i].name=name;save();}
-}
-
-render();
 </script>
 
 </body>
