@@ -1,414 +1,280 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 초록</title>
+import React, { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pencil, Trash2, Plus } from "lucide-react";
 
-<link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css" rel="stylesheet">
+const BG = "#2E8C19";
 
-<style>
-body{
-margin:0;
-font-family:'SUIT',sans-serif;
-background:#2E8C19;
-font-size:13px;
+function useLocalStorage(key, initial) {
+  const [state, setState] = useState(() => {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : initial;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, [key, state]);
+
+  return [state, setState];
 }
 
-header{
-background:#f3f5f4;
-padding:25px;
-text-align:center;
-font-size:20px;
+export default function App() {
+  const [boards, setBoards] = useLocalStorage("boards", []);
+  const [records, setRecords] = useLocalStorage("records", []);
+  const [benefit, setBenefit] = useLocalStorage("benefit", {
+    current: 0,
+    total: 0,
+    history: []
+  });
+
+  const [openRecord, setOpenRecord] = useState(false);
+  const [openBenefit, setOpenBenefit] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+
+  const addBoard = () => {
+    const name = prompt("도장판 이름 입력");
+    if (!name) return;
+    setBoards([...boards, { id: Date.now(), name, stamps: 0, rewardGiven: false }]);
+  };
+
+  const deleteBoard = (id) => {
+    setBoards(boards.filter((b) => b.id !== id));
+  };
+
+  const renameBoard = (id) => {
+    const name = prompt("새 이름 입력");
+    if (!name) return;
+    setBoards(boards.map((b) => (b.id === id ? { ...b, name } : b)));
+  };
+
+  const handleAddRecord = (data) => {
+    let updatedBoards = [...boards];
+
+    if (data.boardId) {
+      updatedBoards = updatedBoards.map((b) => {
+        if (b.id === data.boardId) {
+          const newStamps = Math.min(b.stamps + 1, 6);
+          let rewardGiven = b.rewardGiven;
+
+          if (newStamps >= 3 && !b.rewardGiven) {
+            setBenefit((prev) => ({
+              ...prev,
+              current: prev.current + 1,
+              total: prev.total + 1,
+              history: [...prev.history, { type: "획득", date: data.date, amount: 1 }]
+            }));
+            rewardGiven = true;
+          }
+
+          return { ...b, stamps: newStamps, rewardGiven };
+        }
+        return b;
+      });
+    }
+
+    if (data.discount === "40%할인") {
+      setBenefit((prev) => ({
+        ...prev,
+        current: prev.current - 1,
+        history: [...prev.history, { type: "사용", date: data.date, amount: 1 }]
+      }));
+    }
+
+    setBoards(updatedBoards);
+
+    if (editingRecord) {
+      setRecords(records.map((r) => (r.id === editingRecord.id ? { ...editingRecord, ...data } : r)));
+      setEditingRecord(null);
+    } else {
+      setRecords([...records, { id: Date.now(), ...data }]);
+    }
+
+    setOpenRecord(false);
+  };
+
+  const handleBenefitAdjust = (type, amount, date, memo) => {
+    setBenefit((prev) => ({
+      ...prev,
+      current: type === "추가" ? prev.current + amount : prev.current - amount,
+      total: type === "추가" ? prev.total + amount : prev.total,
+      history: [...prev.history, { type, date, amount, memo }]
+    }));
+    setOpenBenefit(false);
+  };
+
+  return (
+    <div style={{ background: BG }} className="min-h-screen p-6 text-sm font-light">
+      <h1 className="text-2xl text-white mb-6">📘 2026 초록</h1>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="rounded-2xl bg-white/90">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg">도장판</h2>
+              <Button size="sm" onClick={addBoard}><Plus size={16} /></Button>
+            </div>
+            {boards.map((b) => (
+              <div key={b.id} className="border rounded-xl p-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span>{b.name}</span>
+                  <div className="flex gap-2">
+                    <Pencil size={14} className="cursor-pointer" onClick={() => renameBoard(b.id)} />
+                    <Trash2 size={14} className="cursor-pointer" onClick={() => deleteBoard(b.id)} />
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  {[...Array(6)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-3 h-3 rounded-full border ${i < b.stamps ? "bg-black" : ""}`}
+                    />
+                  ))}
+                </div>
+                <div className="text-xs text-gray-600">
+                  현재 {b.stamps}개 / 다음 혜택까지 {b.stamps < 3 ? 3 - b.stamps : 6 - b.stamps}개
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl bg-white/90">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg">혜택</h2>
+              <Button size="sm" onClick={() => setOpenBenefit(true)}>조정</Button>
+            </div>
+            <div className="border rounded-xl p-4 text-center">
+              <div className="font-medium">40% 할인권</div>
+              <div className="grid grid-cols-2 mt-2 text-xs">
+                <div>현재 {benefit.current}</div>
+                <div>총 누적 {benefit.total}</div>
+              </div>
+            </div>
+
+            <div className="border rounded-xl p-3 space-y-1 max-h-40 overflow-auto">
+              {benefit.history.map((h, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span>{h.date}</span>
+                  <span>{h.type} {h.amount}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl bg-white/90 md:col-span-3">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg">회차 기록</h2>
+              <Button size="sm" onClick={() => setOpenRecord(true)}>회차 추가</Button>
+            </div>
+            <div className="space-y-2">
+              {records.map((r) => (
+                <div key={r.id} className="border rounded-xl p-3 flex justify-between items-center">
+                  <div className="space-y-1">
+                    <div>{r.date} {r.timeLabel}</div>
+                    <div className="text-xs text-gray-600">{r.discount}</div>
+                    <div className="text-xs text-gray-500">메모: {r.memo}</div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Pencil size={16} className="cursor-pointer" onClick={() => { setEditingRecord(r); setOpenRecord(true); }} />
+                    <Trash2 size={16} className="cursor-pointer" onClick={() => setRecords(records.filter((x) => x.id !== r.id))} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={openRecord} onOpenChange={setOpenRecord}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>회차 추가</DialogTitle>
+          </DialogHeader>
+          <RecordForm boards={boards} onSubmit={handleAddRecord} defaultValue={editingRecord} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openBenefit} onOpenChange={setOpenBenefit}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>40% 할인권 조정</DialogTitle>
+          </DialogHeader>
+          <BenefitForm onSubmit={handleBenefitAdjust} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
-.container{padding:25px;}
+function RecordForm({ boards, onSubmit, defaultValue }) {
+  const [date, setDate] = useState(defaultValue?.date || "");
+  const [discount, setDiscount] = useState(defaultValue?.discount || "");
+  const [boardId, setBoardId] = useState(defaultValue?.boardId || "");
+  const [memo, setMemo] = useState(defaultValue?.memo || "");
+  const [timeLabel, setTimeLabel] = useState(defaultValue?.timeLabel || "");
+  const [showTime, setShowTime] = useState(false);
 
-.section{
-background:#f3f5f4;
-padding:18px;
-margin-bottom:20px;
-border-radius:8px;
+  return (
+    <div className="space-y-3 text-sm">
+      <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+
+      <div className="flex items-center gap-2">
+        <input type="checkbox" onChange={(e) => setShowTime(e.target.checked)} />
+        <span>"공휴일 낮/밤 직접 선택"</span>
+      </div>
+
+      {showTime && (
+        <select value={timeLabel} onChange={(e) => setTimeLabel(e.target.value)} className="w-full border rounded p-1">
+          <option value="">미선택</option>
+          <option value="낮">낮</option>
+          <option value="밤">밤</option>
+        </select>
+      )}
+
+      <select value={discount} onChange={(e) => setDiscount(e.target.value)} className="w-full border rounded p-1">
+        <option>재관(30%)</option>
+        <option>40%할인</option>
+        <option>타임세</option>
+        <option>증빙 프리패스</option>
+        <option>교환</option>
+        <option>기타</option>
+      </select>
+
+      <select value={boardId} onChange={(e) => setBoardId(Number(e.target.value))} className="w-full border rounded p-1">
+        <option value="">도장판 선택</option>
+        {boards.map((b) => (
+          <option key={b.id} value={b.id}>{b.name}</option>
+        ))}
+      </select>
+
+      <Input placeholder="메모" value={memo} onChange={(e) => setMemo(e.target.value)} />
+
+      <Button onClick={() => onSubmit({ date, discount, boardId, memo, timeLabel })} className="w-full">저장</Button>
+    </div>
+  );
 }
 
-h3{
-font-weight:500;
-margin-top:0;
+function BenefitForm({ onSubmit }) {
+  const [type, setType] = useState("추가");
+  const [amount, setAmount] = useState(1);
+  const [date, setDate] = useState("");
+  const [memo, setMemo] = useState("");
+
+  return (
+    <div className="space-y-3 text-sm">
+      <select value={type} onChange={(e) => setType(e.target.value)} className="w-full border rounded p-1">
+        <option>추가</option>
+        <option>차감</option>
+      </select>
+      <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+      <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      <Input placeholder="메모 (선택)" value={memo} onChange={(e) => setMemo(e.target.value)} />
+      <Button onClick={() => onSubmit(type, amount, date, memo)} className="w-full">확인</Button>
+    </div>
+  );
 }
-
-.circle{
-margin-right:6px;
-}
-
-.board-card{
-background:white;
-padding:12px;
-border-radius:6px;
-margin-bottom:12px;
-border:1px solid #ddd;
-}
-
-.progress{
-height:5px;
-background:#ddd;
-margin-top:6px;
-}
-
-.bar{
-height:5px;
-background:#2E8C19;
-}
-
-button{
-background:#2E8C19;
-color:white;
-border:none;
-padding:5px 10px;
-border-radius:4px;
-cursor:pointer;
-font-size:12px;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-background:white;
-font-size:12px;
-}
-
-th,td{
-border:1px solid #ddd;
-padding:6px;
-text-align:center;
-}
-
-.modal{
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
-background:rgba(0,0,0,0.5);
-display:none;
-justify-content:center;
-align-items:center;
-}
-
-.modal-content{
-background:white;
-padding:20px;
-width:340px;
-border-radius:8px;
-}
-
-input,select{
-width:100%;
-padding:5px;
-margin-bottom:8px;
-font-family:'SUIT';
-font-size:12px;
-}
-.hidden{display:none;}
-.flex-between{
-display:flex;
-justify-content:space-between;
-align-items:center;
-}
-</style>
-</head>
-<body>
-
-<header>🌿 2026 초록 재관람 도장판</header>
-
-<div class="container">
-
-<div class="section">
-<h3><span class="circle">○</span>도장판</h3>
-<div id="boardCards"></div>
-<button onclick="addBoard()">도장판 추가</button>
-</div>
-
-<div class="section">
-<div class="flex-between">
-<h3><span class="circle">○</span>할인권 지갑</h3>
-<button onclick="openCouponModal()">추가 / 차감</button>
-</div>
-
-40% 할인권 현재: <b id="couponCurrent">0</b> /
-총 누적: <b id="couponTotal">0</b><br>
-폴라로이드 누적: <b id="polaroidTotal">0</b>
-</div>
-
-<div class="section">
-<h3><span class="circle">○</span>할인권 상세 기록</h3>
-<table>
-<thead>
-<tr>
-<th>날짜</th>
-<th>유형</th>
-<th>수량</th>
-<th>메모</th>
-</tr>
-</thead>
-<tbody id="couponHistory"></tbody>
-</table>
-</div>
-
-<div class="section">
-<h3><span class="circle">○</span>회차 기록</h3>
-<table>
-<thead>
-<tr>
-<th>날짜</th>
-<th>할인</th>
-<th>도장판</th>
-<th>이번</th>
-<th>현재</th>
-<th>관리</th>
-</tr>
-</thead>
-<tbody id="visitBody"></tbody>
-</table>
-<br>
-<button onclick="openVisitModal()">회차 추가</button>
-</div>
-
-</div>
-
-<!-- 회차 모달 -->
-<div class="modal" id="visitModal">
-<div class="modal-content">
-<h3>회차 추가</h3>
-
-<label>날짜</label>
-<input type="date" id="vDate">
-
-<label>
-<input type="checkbox" id="holidayCheck" onchange="toggleHoliday()">
-"공휴일 낮/밤 직접 선택"
-</label>
-
-<select id="vTime" class="hidden">
-<option value="">미선택</option>
-<option value="낮">낮</option>
-<option value="밤">밤</option>
-</select>
-
-<label>할인 종류</label>
-<select id="vDiscount">
-<option>재관(30%)</option>
-<option>40%할인</option>
-<option>타임세</option>
-<option>증빙 프리패스</option>
-<option>교환</option>
-<option>기타</option>
-</select>
-
-<label>도장 적립 배율</label>
-<select id="vMulti">
-<option value="1">1</option>
-<option value="2">2</option>
-<option value="3">3</option>
-</select>
-
-<label>도장판 선택</label>
-<select id="vBoard"></select>
-
-<label>메모</label>
-<input type="text" id="vMemo">
-
-<button onclick="saveVisit()">저장</button>
-<button onclick="closeVisitModal()">취소</button>
-</div>
-</div>
-
-<!-- 할인권 모달 -->
-<div class="modal" id="couponModal">
-<div class="modal-content">
-<h3>할인권 추가 / 차감</h3>
-
-<select id="cType">
-<option value="add">획득</option>
-<option value="sub">사용</option>
-</select>
-
-<input type="number" id="cAmount" placeholder="수량">
-<input type="date" id="cDate">
-<input type="text" id="cMemo" placeholder="메모">
-
-<button onclick="saveCoupon()">저장</button>
-<button onclick="closeCouponModal()">취소</button>
-</div>
-</div>
-
-<script>
-let data=JSON.parse(localStorage.getItem("greenV8"))||{
-boards:[{name:"도장판 1",stamps:0,got40:false,got6:false}],
-visits:[],
-coupon:{current:0,total:0,history:[]},
-polaroid:0
-};
-
-let editIndex=null;
-
-function save(){
-localStorage.setItem("greenV8",JSON.stringify(data));
-render();
-}
-
-function addBoard(){
-data.boards.push({name:"도장판 "+(data.boards.length+1),stamps:0,got40:false,got6:false});
-save();
-}
-
-function toggleHoliday(){
-vTime.classList.toggle("hidden",!holidayCheck.checked);
-}
-
-function recalc(){
-data.boards.forEach(b=>{b.stamps=0;b.got40=false;b.got6=false;});
-data.coupon.current=0;
-data.coupon.total=0;
-data.polaroid=0;
-
-data.visits.forEach(v=>{
-let b=data.boards[v.board];
-b.stamps+=parseInt(v.multi);
-
-if(v.discount==="40%할인"){
-data.coupon.current--;
-data.coupon.history.push({date:v.date,type:"사용",amount:1,memo:"회차 사용"});
-}
-
-if(b.stamps>=3 && !b.got40){
-data.coupon.current++;
-data.coupon.total++;
-data.coupon.history.push({date:v.date,type:"획득",amount:1,memo:"3회 달성"});
-b.got40=true;
-}
-if(b.stamps>=6 && !b.got6){
-data.polaroid++;
-b.got6=true;
-}
-});
-}
-
-function render(){
-recalc();
-boardCards.innerHTML="";
-visitBody.innerHTML="";
-couponHistory.innerHTML="";
-vBoard.innerHTML="";
-
-data.boards.forEach((b,i)=>{
-let next3=b.stamps<3?3-b.stamps:0;
-let next6=b.stamps<6?6-b.stamps:0;
-
-boardCards.innerHTML+=`
-<div class="board-card">
-${b.name}<br>
-현재 ${b.stamps}/6<br>
-${b.stamps<3?`3까지 ${next3} 남음`:
-b.stamps<6?`6까지 ${next6} 남음`:
-`완료`}
-<div class="progress">
-<div class="bar" style="width:${(b.stamps/6)*100}%"></div>
-</div>
-</div>`;
-
-vBoard.innerHTML+=`<option value="${i}">${b.name}</option>`;
-});
-
-let temp=Array(data.boards.length).fill(0);
-
-data.visits.forEach((v,i)=>{
-temp[v.board]+=parseInt(v.multi);
-let dateText=v.date+(v.time?` (${v.time})`:"");
-visitBody.innerHTML+=`
-<tr>
-<td>${dateText}</td>
-<td>${v.discount}</td>
-<td>${data.boards[v.board].name}</td>
-<td>${v.multi}</td>
-<td>${temp[v.board]}</td>
-<td>
-<button onclick="editVisit(${i})">수정</button>
-<button onclick="deleteVisit(${i})">삭제</button>
-</td>
-</tr>`;
-});
-
-data.coupon.history.forEach(h=>{
-couponHistory.innerHTML+=`
-<tr>
-<td>${h.date}</td>
-<td>${h.type}</td>
-<td>${h.amount}</td>
-<td>${h.memo||""}</td>
-</tr>`;
-});
-
-couponCurrent.innerText=data.coupon.current;
-couponTotal.innerText=data.coupon.total;
-polaroidTotal.innerText=data.polaroid;
-}
-
-function openVisitModal(){visitModal.style.display="flex";}
-function closeVisitModal(){visitModal.style.display="none";editIndex=null;}
-
-function saveVisit(){
-let visit={
-date:vDate.value,
-time:vTime.value,
-discount:vDiscount.value,
-multi:vMulti.value,
-board:parseInt(vBoard.value),
-memo:vMemo.value
-};
-
-if(editIndex!==null){
-data.visits[editIndex]=visit;
-}else{
-data.visits.push(visit);
-}
-save();
-closeVisitModal();
-}
-
-function editVisit(i){
-let v=data.visits[i];
-editIndex=i;
-vDate.value=v.date;
-vTime.value=v.time||"";
-vDiscount.value=v.discount;
-vMulti.value=v.multi;
-vBoard.value=v.board;
-vMemo.value=v.memo;
-visitModal.style.display="flex";
-}
-
-function deleteVisit(i){
-data.visits.splice(i,1);
-save();
-}
-
-function openCouponModal(){couponModal.style.display="flex";}
-function closeCouponModal(){couponModal.style.display="none";}
-
-function saveCoupon(){
-let amt=parseInt(cAmount.value)||0;
-let type=cType.value==="add"?"획득":"사용";
-if(type==="획득"){
-data.coupon.current+=amt;
-data.coupon.total+=amt;
-}else{
-data.coupon.current-=amt;
-}
-data.coupon.history.push({date:cDate.value,type:type,amount:amt,memo:cMemo.value});
-save();
-closeCouponModal();
-}
-
-render();
-</script>
-
-</body>
-</html>
