@@ -371,36 +371,19 @@ function recalc() {
     data.coupon.total = 0;
     data.polaroid = 0;
 
-    // 수동 히스토리를 먼저 반영
-    data.coupon.history.filter(h => h.isManual).forEach(h => {
-        if(h.type === "획득") {
-            data.coupon.current += h.amount;
-            data.coupon.total += h.amount;
-        } else {
-            data.coupon.current -= h.amount;
-        }
-    });
+data.coupon.history.forEach(h=>{
+couponHistory.innerHTML+=`
+<tr>
+<td>${h.date}</td>
+<td>${h.type}</td>
+<td>${h.amount}</td>
+<td>${h.memo||""}</td>
+</tr>`;
+});
 
-    // 회차 기반 자동 계산
-    data.visits.forEach(v => {
-        let b = data.boards[v.board];
-        if(!b) return;
-        b.stamps += parseInt(v.multi);
-
-        if(v.discount === "40%할인") {
-            data.coupon.current--;
-        }
-
-        if(b.stamps >= 3 && !b.got40) {
-            data.coupon.current++;
-            data.coupon.total++;
-            b.got40 = true;
-        }
-        if(b.stamps >= 6 && !b.got6) {
-            data.polaroid++;
-            b.got6 = true;
-        }
-    });
+couponCurrent.innerText=data.coupon.current;
+couponTotal.innerText=data.coupon.total;
+polaroidTotal.innerText=data.polaroid;
 }
 
 function render() {
