@@ -204,8 +204,8 @@ input, select {
     <div class="section">
         <h3><span class="circle"></span>도장판</h3>
         <div id="boardCards"></div>
-        <button onclick="addNewBoardPrompt()">도장판 추가</button>
-    </div>
+        <button onclick="addBoard()">도장판 추가</button>
+</div>
 
     <div class="section">
         <div class="flex-between">
@@ -222,7 +222,6 @@ input, select {
             <div class="benefit-card">
                 <div class="benefit-title">폴라로이드</div>
                 <div class="benefit-value" id="polaroidTotal">0</div>
-                <div class="benefit-sub">누적 획득</div>
             </div>
         </div>
     </div>
@@ -294,7 +293,7 @@ input, select {
             <option>기타</option>
         </select>
 
-        <label>도장 적립 배율</label>
+        <label>도장 적립 갯수</label>
         <select id="vMulti">
             <option value="1">1</option>
             <option value="2">2</option>
