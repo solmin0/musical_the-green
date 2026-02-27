@@ -3,135 +3,168 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>재관람 도장판</title>
+<title>2026 초록 재관람 도장판</title>
 
 <style>
-body{
-    font-family: sans-serif;
-    background:#111;
-    color:white;
-    text-align:center;
-    margin:0;
-    padding:30px;
-}
-
-h1{margin-bottom:30px;}
-
-button{
-    padding:8px 15px;
-    margin:5px;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-}
-
-.add-btn{background:crimson;color:white;}
-.delete-btn{background:#444;color:white;}
-.stamp-btn{background:gold;color:black;}
-
-.board{
-    border:1px solid #333;
-    margin:20px auto;
-    padding:20px;
-    width:300px;
-    border-radius:10px;
-    background:#1e1e1e;
-}
-
-.stamps{
-    font-size:24px;
-    margin:15px 0;
-}
-
-.reward{
-    margin-top:10px;
-    font-weight:bold;
-    color:gold;
-}
-select,input{
-    padding:5px;
-    margin:5px;
-}
+body{font-family:sans-serif;background:#f2f2f2;margin:0;padding:20px;}
+h1{text-align:center;margin-bottom:20px;}
+.section{background:white;padding:20px;margin:20px 0;border-radius:10px;}
+.board{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;}
+button{padding:8px 12px;margin:5px;cursor:pointer;}
+input,select{padding:5px;margin:5px;}
+.table{width:100%;border-collapse:collapse;margin-top:10px;}
+.table th,.table td{border:1px solid #ddd;padding:8px;text-align:center;}
+.progress{height:10px;background:#ddd;border-radius:5px;margin-top:5px;}
+.progress-bar{height:10px;background:#2e7d32;border-radius:5px;}
 </style>
 </head>
-
 <body>
 
-<h1>🎭 재관람 도장판</h1>
+<h1>🌿 2026 초록 재관람 도장판</h1>
 
-<div>
-    <button class="add-btn" onclick="addBoard()">도장판 추가</button>
+<div class="section">
+<h2>🎟 할인권 지갑</h2>
+<div>40% 할인권: <span id="coupon40">0</span></div>
+<div>🎁 폴라로이드: <span id="polaroid">0</span></div>
 </div>
 
-<hr>
-
-<h2>예매 회차 추가</h2>
-
-<select id="boardSelect"></select>
-<input type="number" id="stampCount" min="1" value="1">
-<button class="stamp-btn" onclick="addStamp()">도장 추가</button>
-
+<div class="section">
+<h2>📌 도장판</h2>
+<button onclick="addBoard()">도장판 추가</button>
 <div id="boards"></div>
+</div>
+
+<div class="section">
+<h2>➕ 회차 추가</h2>
+
+날짜 <input type="date" id="date">
+
+할인 
+<select id="discount">
+<option value="none">없음</option>
+<option value="40">40%</option>
+<option value="50">50%</option>
+</select>
+
+도장 적립 배율 
+<select id="multiplier">
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+</select>
+
+도장판 선택 
+<select id="boardSelect"></select>
+
+메모 <input type="text" id="memo">
+
+<button onclick="addVisit()">저장</button>
+
+<table class="table">
+<thead>
+<tr>
+<th>날짜</th>
+<th>할인</th>
+<th>배율</th>
+<th>도장판</th>
+<th>메모</th>
+</tr>
+</thead>
+<tbody id="visitTable"></tbody>
+</table>
+
+</div>
 
 <script>
-let boards = [];
-let boardId = 0;
+let data = JSON.parse(localStorage.getItem("cholog2026")) || {
+boards:[],
+visits:[],
+coupon40:0,
+polaroid:0
+};
+
+function save(){
+localStorage.setItem("cholog2026",JSON.stringify(data));
+render();
+}
 
 function addBoard(){
-    const id = boardId++;
-    boards.push({id:id, stamps:0});
-    render();
+data.boards.push({stamps:0});
+save();
 }
 
-function deleteBoard(id){
-    boards = boards.filter(b=>b.id!==id);
-    render();
-}
+function addVisit(){
+let date=document.getElementById("date").value;
+let discount=document.getElementById("discount").value;
+let multiplier=parseInt(document.getElementById("multiplier").value);
+let boardIndex=parseInt(document.getElementById("boardSelect").value);
+let memo=document.getElementById("memo").value;
 
-function addStamp(){
-    const boardId = parseInt(document.getElementById("boardSelect").value);
-    const count = parseInt(document.getElementById("stampCount").value);
+if(!date) return alert("날짜를 입력하세요.");
 
-    const board = boards.find(b=>b.id===boardId);
-    if(board){
-        board.stamps += count;
-        render();
-    }
+let board=data.boards[boardIndex];
+if(!board) return;
+
+let before=board.stamps;
+let after=Math.min(6,before+multiplier);
+board.stamps=after;
+
+if(before<3 && after>=3) data.coupon40++;
+if(before<6 && after>=6) data.polaroid++;
+
+data.visits.push({date,discount,multiplier,boardIndex,memo});
+save();
 }
 
 function render(){
-    const container = document.getElementById("boards");
-    const select = document.getElementById("boardSelect");
-    container.innerHTML="";
-    select.innerHTML="";
+document.getElementById("coupon40").innerText=data.coupon40;
+document.getElementById("polaroid").innerText=data.polaroid;
 
-    boards.forEach(board=>{
-        const div = document.createElement("div");
-        div.className="board";
+let boardsDiv=document.getElementById("boards");
+boardsDiv.innerHTML="";
+let select=document.getElementById("boardSelect");
+select.innerHTML="";
 
-        let rewardText="";
-        if(board.stamps>=6){
-            rewardText="🎁 6회차 달성! 폴라로이드 증정";
-        }else if(board.stamps>=3){
-            rewardText="🎫 3회차 달성! 40% 할인권 증정";
-        }
+data.boards.forEach((b,i)=>{
+let div=document.createElement("div");
+div.className="board";
+div.innerHTML=`
+<h3>도장판 ${i+1}</h3>
+<div>${b.stamps} / 6</div>
+<div class="progress">
+<div class="progress-bar" style="width:${(b.stamps/6)*100}%"></div>
+</div>
+<button onclick="deleteBoard(${i})">삭제</button>
+`;
+boardsDiv.appendChild(div);
 
-        div.innerHTML=`
-            <h3>도장판 #${board.id}</h3>
-            <div class="stamps">${"⭐".repeat(board.stamps)}</div>
-            <div>총 ${board.stamps}회 관람</div>
-            <div class="reward">${rewardText}</div>
-            <button class="delete-btn" onclick="deleteBoard(${board.id})">삭제</button>
-        `;
+let option=document.createElement("option");
+option.value=i;
+option.text="도장판 "+(i+1);
+select.appendChild(option);
+});
 
-        container.appendChild(div);
-
-        const option=document.createElement("option");
-        option.value=board.id;
-        option.text="도장판 #"+board.id;
-        select.appendChild(option);
-    });
+let table=document.getElementById("visitTable");
+table.innerHTML="";
+data.visits.forEach(v=>{
+let row=document.createElement("tr");
+row.innerHTML=`
+<td>${v.date}</td>
+<td>${v.discount}</td>
+<td>${v.multiplier}</td>
+<td>${v.boardIndex+1}</td>
+<td>${v.memo}</td>
+`;
+table.appendChild(row);
+});
 }
+
+function deleteBoard(index){
+data.boards.splice(index,1);
+save();
+}
+
+render();
 </script>
 
 </body>
