@@ -149,19 +149,17 @@ color:white;
 <input type="date" id="vDate">
 
 <!-- 체크박스 추가 -->
-<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-  <input type="checkbox" id="holidayCheck" onchange="toggleHoliday()">
-  <label for="holidayCheck" style="margin:0;font-size:12px;">
-    공휴일 낮/밤 직접 선택
-  </label>
-</div>
+<div class="checkbox-group">
+            <input type="checkbox" id="holidayCheck" onchange="toggleHoliday()">
+            <label for="holidayCheck" style="margin:0;">공휴일 낮/밤 직접 선택</label>
+        </div>
 
-<div id="timeSelectBox" style="display:none;gap:6px;margin-bottom:10px;">
-  <button type="button" class="time-btn" onclick="selectTime('',this)">미선택</button>
-  <button type="button" class="time-btn" onclick="selectTime('낮',this)">낮</button>
-  <button type="button" class="time-btn" onclick="selectTime('밤',this)">밤</button>
-</div>
-
+        <select id="vTime" class="hidden">
+            <option value="">미선택</option>
+            <option value="낮">낮</option>
+            <option value="밤">밤</option>
+        </select>
+  
 <label>할인 권종</label>
 <select id="vDiscount">
 <option>재관(30%)</option>
