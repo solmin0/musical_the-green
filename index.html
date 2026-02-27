@@ -195,19 +195,218 @@ color:white;
 </div>
 
 <script>
-let selectedTime="";
+let data = JSON.parse(localStorage.getItem("greenFinalV2")) || {
+  boards:[{name:"도장판 1"}],
+  visits:[]
+};
+
+let editIndex = null;
+let selectedTime = "";
+
+/* ---------------- 저장 ---------------- */
+
+function save(){
+  localStorage.setItem("greenFinalV2",JSON.stringify(data));
+  render();
+}
+
+/* ---------------- 도장판 ---------------- */
+
+function openBoardModal(){
+  document.getElementById("boardModal").style.display="flex";
+}
+
+function closeBoardModal(){
+  document.getElementById("boardModal").style.display="none";
+}
+
+function saveBoard(){
+  const name=document.getElementById("newBoardName").value.trim();
+  if(!name){ alert("이름 입력"); return; }
+  data.boards.push({name});
+  save();
+  closeBoardModal();
+}
+
+function renameBoard(i){
+  const name=prompt("새 이름 입력",data.boards[i].name);
+  if(name){
+    data.boards[i].name=name;
+    save();
+  }
+}
+
+/* ---------------- 회차 ---------------- */
+
+function openVisitModal(){
+  editIndex=null;
+  document.getElementById("visitModal").style.display="flex";
+}
+
+function closeVisitModal(){
+  document.getElementById("visitModal").style.display="none";
+}
+
+function saveVisit(){
+  const v={
+    date:vDate.value,
+    discount:vDiscount.value,
+    multi:parseInt(vMulti.value),
+    board:parseInt(vBoard.value),
+    memo:vMemo.value,
+    time:selectedTime
+  };
+
+  if(!v.date){ alert("날짜 선택"); return; }
+
+  if(editIndex!==null){
+    data.visits[editIndex]=v;
+  }else{
+    data.visits.push(v);
+  }
+
+  save();
+  closeVisitModal();
+}
+
+function editVisit(i){
+  const v=data.visits[i];
+  editIndex=i;
+
+  vDate.value=v.date;
+  vDiscount.value=v.discount;
+  vMulti.value=v.multi;
+  vBoard.value=v.board;
+  vMemo.value=v.memo||"";
+
+  selectedTime=v.time||"";
+
+  openVisitModal();
+}
+
+function deleteVisit(i){
+  if(confirm("삭제?")){
+    data.visits.splice(i,1);
+    save();
+  }
+}
+
+/* ---------------- 낮/밤 ---------------- */
 
 function toggleHoliday(){
-document.getElementById("timeSelectBox").style.display=
-document.getElementById("holidayCheck").checked?"flex":"none";
+  const box=document.getElementById("timeSelectBox");
+  box.style.display=document.getElementById("holidayCheck").checked?"flex":"none";
 }
 
 function selectTime(val,el){
-selectedTime=val;
-document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("active"));
-el.classList.add("active");
+  selectedTime=val;
+  document.querySelectorAll(".time-btn").forEach(b=>b.classList.remove("active"));
+  el.classList.add("active");
 }
-</script>
 
-</body>
-</html>
+/* ---------------- 렌더 ---------------- */
+
+function render(){
+
+  data.visits.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  let boardState=data.boards.map(b=>({name:b.name,stamps:0}));
+  let couponCurrent=0,couponTotal=0,polaroid=0;
+  let history=[];
+
+  visitBody.innerHTML="";
+  couponHistory.innerHTML="";
+  boardCards.innerHTML="";
+
+  data.visits.forEach((v,i)=>{
+
+    let stamps=v.multi;
+    let boardIndex=v.board;
+
+    while(stamps>0){
+
+      if(!boardState[boardIndex]){
+        boardState.push({name:"도장판 "+(boardState.length+1),stamps:0});
+      }
+
+      let current=boardState[boardIndex];
+      let remain=6-current.stamps;
+
+      if(stamps<=remain){
+
+        if(current.stamps<3 && current.stamps+stamps>=3){
+          couponCurrent++;
+          couponTotal++;
+          history.push({date:v.date,type:"40% 획득"});
+        }
+
+        current.stamps+=stamps;
+        stamps=0;
+
+      }else{
+
+        stamps-=remain;
+        current.stamps=6;
+
+        polaroid++;
+        history.push({date:v.date,type:"폴라 획득"});
+
+        boardIndex++;
+      }
+    }
+
+    if(v.discount==="40%할인"){
+      couponCurrent--;
+      history.push({date:v.date,type:"40% 사용"});
+    }
+
+    visitBody.innerHTML+=`
+    <tr>
+      <td>${v.date.slice(5)} ${v.time?`<span style="font-size:10px;color:#666;">${v.time}</span>`:""}</td>
+      <td>${v.discount}</td>
+      <td>${v.multi} (도장판 ${v.board+1})</td>
+      <td>${boardState[v.board]?.stamps||0}</td>
+      <td>${v.memo||""}</td>
+      <td>
+        <button class="icon-btn" onclick="editVisit(${i})">✏️</button>
+        <button class="icon-btn" onclick="deleteVisit(${i})">🗑️</button>
+      </td>
+    </tr>`;
+  });
+
+  boardState.forEach((b,i)=>{
+    boardCards.innerHTML+=`
+    <div class="board-card">
+      <div class="flex-between">
+        <strong>${b.name}</strong>
+        <button class="small-btn" onclick="renameBoard(${i})">이름수정</button>
+      </div>
+      <div>${b.stamps}/6</div>
+      <div class="progress">
+        <div class="bar" style="width:${(b.stamps/6)*100}%"></div>
+      </div>
+    </div>`;
+  });
+
+  history.forEach(h=>{
+    couponHistory.innerHTML+=`
+    <tr>
+      <td>${h.date}</td>
+      <td>${h.type}</td>
+    </tr>`;
+  });
+
+  couponCurrent=Math.max(couponCurrent,0);
+
+  couponCurrentSpan.innerText=couponCurrent;
+  couponTotalSpan.innerText=couponTotal;
+  polaroidTotal.innerText=polaroid;
+
+  vBoard.innerHTML="";
+  boardState.forEach((b,i)=>{
+    vBoard.innerHTML+=`<option value="${i}">${b.name}</option>`;
+  });
+}
+
+render();
+</script>
