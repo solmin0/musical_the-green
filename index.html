@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STONE 2026</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #111;
+    color: white;
+    text-align: center;
+}
+
+header {
+    background: url('https://images.unsplash.com/photo-1503095396549-807759245b35') no-repeat center;
+    background-size: cover;
+    height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+header h1 {
+    font-size: 4em;
+    margin: 0;
+}
+
+header p {
+    font-size: 1.5em;
+    margin-top: 10px;
+}
+
+.section {
+    padding: 80px 20px;
+}
+
+.section h2 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+}
+
+.cast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 30px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.cast-card {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.button {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 15px 30px;
+    background-color: crimson;
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: bold;
+}
+
+footer {
+    padding: 40px;
+    background-color: #000;
+    font-size: 0.9em;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>STONE 2026</h1>
+    <p>2026.02.10 - 2026.04.26</p>
+</header>
+
+<section class="section">
+    <h2>공연 소개</h2>
+    <p>
+        운명처럼 마주한 인물들, 그들의 선택이 만들어내는 이야기.<br>
+        뮤지컬 <strong>STONE</strong>이 2026년 무대에 오릅니다.
+    </p>
+</section>
+
+<section class="section">
+    <h2>CAST</h2>
+    <div class="cast-grid">
+        <div class="cast-card">
+            <h3>사이먼</h3>
+            <p>배우 A</p>
+        </div>
+        <div class="cast-card">
+            <h3>코스모</h3>
+            <p>배우 B</p>
+        </div>
+        <div class="cast-card">
+            <h3>마이클</h3>
+            <p>배우 C</p>
+        </div>
+    </div>
+
+    <a href="#" class="button">예매하기</a>
+</section>
+
+<footer>
+    © 2026 STONE Musical. All Rights Reserved.
+</footer>
+
+</body>
+</html>
