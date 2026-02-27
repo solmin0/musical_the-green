@@ -6,51 +6,137 @@
 <title>2026 초록 도장판</title>
 
 <style>
-body{font-family:sans-serif;background:#f5f5f5;margin:0;padding:20px;}
-h1{text-align:center;}
-.section{background:white;padding:20px;margin:20px 0;border-radius:10px;}
-.board{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;}
-button{padding:6px 10px;margin:3px;cursor:pointer;}
-.progress{height:8px;background:#ddd;border-radius:4px;margin-top:5px;}
-.progress-bar{height:8px;background:#2e7d32;border-radius:4px;}
-.table{width:100%;border-collapse:collapse;margin-top:10px;}
-.table th,.table td{border:1px solid #ddd;padding:6px;text-align:center;}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
-.modal-content{background:white;padding:20px;width:300px;margin:100px auto;border-radius:10px;}
-.wallet-box{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;}
+body{
+margin:0;
+font-family:sans-serif;
+background:#2E8C19;
+color:#333;
+}
+
+header{
+background:white;
+padding:20px;
+text-align:center;
+font-size:24px;
+font-weight:bold;
+box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.badge{
+font-size:12px;
+color:#2E8C19;
+}
+
+.container{
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+margin-bottom:20px;
+box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+button{
+padding:6px 10px;
+margin:4px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#2E8C19;
+color:white;
+}
+
+input,select{
+padding:6px;
+margin:5px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+.board{
+border:1px solid #ddd;
+padding:10px;
+margin:10px 0;
+border-radius:8px;
+}
+
+.progress{
+height:8px;
+background:#eee;
+border-radius:5px;
+margin-top:5px;
+}
+
+.progress-bar{
+height:8px;
+background:#2E8C19;
+border-radius:5px;
+}
+
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table th,.table td{
+border:1px solid #ddd;
+padding:6px;
+text-align:center;
+background:white;
+}
+
+.modal{
+display:none;
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:rgba(0,0,0,0.5);
+}
+
+.modal-content{
+background:white;
+padding:20px;
+width:320px;
+margin:80px auto;
+border-radius:10px;
+}
 </style>
 </head>
+
 <body>
 
-<h1>🌿 2026 초록 재관람 도장판</h1>
+<header>
+🌿 2026 초록 재관람 도장판
+<div class="badge">자동 저장됨</div>
+</header>
 
-<div class="section">
-<h2>🎟 할인권 지갑</h2>
-<div class="wallet-box">
-<strong>40% 할인권</strong><br>
-현재 보유: <span id="current40">0</span>개<br>
-총 획득: <span id="total40">0</span>개
-</div>
-<div class="wallet-box">
-<strong>🎁 폴라로이드</strong><br>
-보유: <span id="polaroid">0</span>개
-</div>
+<div class="container">
+
+<div class="card">
+<h3>🎟 할인권 지갑</h3>
+40% 할인권<br>
+현재 보유: <span id="current40">0</span><br>
+총 획득: <span id="total40">0</span><br><br>
+🎁 폴라로이드: <span id="polaroid">0</span>
 </div>
 
-<div class="section">
-<h2>📌 도장판</h2>
+<div class="card">
+<h3>📌 도장판</h3>
 <button onclick="addBoard()">도장판 추가</button>
 <div id="boards"></div>
 </div>
 
-<div class="section">
-<h2>📅 관람 기록</h2>
+<div class="card">
+<h3>📅 관람 기록</h3>
 <button onclick="openModal()">+ 회차 추가</button>
 <table class="table">
 <thead>
 <tr>
 <th>날짜</th>
-<th>할인사용</th>
+<th>할인</th>
 <th>배율</th>
 <th>도장판</th>
 <th>메모</th>
@@ -61,31 +147,47 @@ button{padding:6px 10px;margin:3px;cursor:pointer;}
 </table>
 </div>
 
+</div>
+
 <div class="modal" id="modal">
 <div class="modal-content">
 <h3>회차 입력</h3>
+
 날짜 <input type="date" id="date"><br>
-할인 사용
+
+할인 종류
 <select id="discount">
-<option value="none">없음</option>
-<option value="40">40% 사용</option>
+<option>재관(30%)</option>
+<option>40%할인</option>
+<option>타임세</option>
+<option>증빙 프리패스</option>
+<option>교환</option>
+<option>기타</option>
 </select><br>
+
 도장 배율
 <select id="multiplier">
 <option value="1">1</option>
 <option value="2">2</option>
 <option value="3">3</option>
 </select><br>
-도장판
+
+도장판 선택
 <select id="boardSelect"></select><br>
+
+새 도장판 이름
+<input type="text" id="newBoardName">
+<button onclick="createBoardFromModal()">추가</button><br>
+
 메모 <input type="text" id="memo"><br><br>
+
 <button onclick="saveVisit()">저장</button>
 <button onclick="closeModal()">닫기</button>
 </div>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("green2026")) || {
+let data=JSON.parse(localStorage.getItem("green2026v2"))||{
 boards:[],
 visits:[],
 current40:0,
@@ -96,30 +198,29 @@ polaroid:0
 let editIndex=null;
 
 function save(){
-localStorage.setItem("green2026",JSON.stringify(data));
+localStorage.setItem("green2026v2",JSON.stringify(data));
 render();
 }
 
-function addBoard(){
-data.boards.push({stamps:0});
+function addBoard(name="새 도장판"){
+data.boards.push({name:name,stamps:0});
 save();
 }
 
-function openModal(index=null){
-editIndex=index;
-document.getElementById("modal").style.display="block";
-if(index!==null){
-let v=data.visits[index];
-date.value=v.date;
-discount.value=v.discount;
-multiplier.value=v.multiplier;
-boardSelect.value=v.board;
-memo.value=v.memo;
+function createBoardFromModal(){
+let name=document.getElementById("newBoardName").value;
+if(!name) return;
+addBoard(name);
+newBoardName.value="";
 }
+
+function openModal(i=null){
+editIndex=i;
+modal.style.display="block";
 }
 
 function closeModal(){
-document.getElementById("modal").style.display="none";
+modal.style.display="none";
 editIndex=null;
 }
 
@@ -143,7 +244,7 @@ data.total40++;
 if(before<6 && after>=6){
 data.polaroid++;
 }
-if(v.discount==="40"){
+if(v.discount==="40%할인"){
 data.current40--;
 }
 });
@@ -164,7 +265,6 @@ data.visits[editIndex]=v;
 }else{
 data.visits.push(v);
 }
-
 recalc();
 save();
 closeModal();
@@ -176,24 +276,33 @@ recalc();
 save();
 }
 
+function deleteBoard(i){
+data.boards.splice(i,1);
+recalc();
+save();
+}
+
 function render(){
 recalc();
+
 current40.innerText=data.current40;
 total40.innerText=data.total40;
 polaroid.innerText=data.polaroid;
 
 boards.innerHTML="";
 boardSelect.innerHTML="";
+
 data.boards.forEach((b,i)=>{
 boards.innerHTML+=`
 <div class="board">
-<h3>도장판 ${i+1}</h3>
-${b.stamps} / 6
+<input value="${b.name}" onchange="renameBoard(${i},this.value)">
+<div>${b.stamps}/6</div>
 <div class="progress">
 <div class="progress-bar" style="width:${(b.stamps/6)*100}%"></div>
 </div>
+<button onclick="deleteBoard(${i})">삭제</button>
 </div>`;
-boardSelect.innerHTML+=`<option value="${i}">도장판 ${i+1}</option>`;
+boardSelect.innerHTML+=`<option value="${i}">${b.name}</option>`;
 });
 
 visitTable.innerHTML="";
@@ -201,9 +310,9 @@ data.visits.forEach((v,i)=>{
 visitTable.innerHTML+=`
 <tr>
 <td>${v.date}</td>
-<td>${v.discount==="40"?"40% 사용":"없음"}</td>
+<td>${v.discount}</td>
 <td>${v.multiplier}</td>
-<td>${v.board+1}</td>
+<td>${data.boards[v.board]?.name||""}</td>
 <td>${v.memo||""}</td>
 <td>
 <button onclick="openModal(${i})">수정</button>
@@ -211,6 +320,11 @@ visitTable.innerHTML+=`
 </td>
 </tr>`;
 });
+}
+
+function renameBoard(i,name){
+data.boards[i].name=name;
+save();
 }
 
 render();
