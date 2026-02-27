@@ -13,68 +13,46 @@ background:#2E8C19;
 }
 
 header{
-background:white;
+background:#f5f7f6;
 padding:30px;
 text-align:center;
-font-size:28px;
+font-size:26px;
 font-weight:bold;
+letter-spacing:1px;
 }
 
-.container{
-padding:30px;
-}
+.container{padding:30px;}
 
 .section{
-background:white;
+background:#f5f7f6;
 padding:20px;
 margin-bottom:25px;
 border-radius:10px;
-}
-
-.board-tabs{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin-bottom:20px;
-}
-
-.tab{
-background:#f2f2f2;
-padding:10px 15px;
-border-radius:6px;
-display:flex;
-gap:8px;
-align-items:center;
-}
-
-.tab button{
-background:none;
-border:none;
-cursor:pointer;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 
 .board-card{
-border:1px solid #ddd;
+border:1px solid #dcdcdc;
 padding:15px;
 border-radius:8px;
 margin-bottom:15px;
+background:white;
 }
 
 .progress{
-height:8px;
-background:#eee;
+height:6px;
+background:#ddd;
 margin-top:8px;
 }
 
 .bar{
-height:8px;
+height:6px;
 background:#2E8C19;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:20px;
 background:white;
 }
 
@@ -90,7 +68,7 @@ cursor:pointer;
 background:#2E8C19;
 color:white;
 border:none;
-border-radius:5px;
+border-radius:4px;
 }
 
 .modal{
@@ -115,6 +93,10 @@ width:100%;
 margin-bottom:10px;
 padding:6px;
 }
+.small{
+font-size:13px;
+color:#666;
+}
 </style>
 </head>
 <body>
@@ -125,39 +107,32 @@ padding:6px;
 
 <div class="section">
 <h3>📌 도장판</h3>
-<div class="board-tabs" id="boardTabs"></div>
-<button onclick="addBoard()">+ 도장판 추가</button>
-
 <div id="boardCards"></div>
+<button onclick="addBoard()">+ 도장판 추가</button>
 </div>
 
 <div class="section">
 <h3>🎟 할인권 지갑</h3>
-
 40% 할인권 현재: <b id="couponCurrent">0</b> /
-총 누적: <b id="couponTotal">0</b>
-<br><br>
+총 누적: <b id="couponTotal">0</b><br><br>
 🎁 폴라로이드 누적: <b id="polaroidTotal">0</b>
-<br><br>
-<button onclick="openCouponModal()">+ 할인권 추가 / 차감</button>
 </div>
 
 <div class="section">
 <h3>📅 회차 기록</h3>
 <table>
 <thead>
-<tr id="visitHeader">
+<tr>
 <th>날짜</th>
 <th>할인 종류</th>
-<th>배율</th>
 <th>도장판</th>
-<th>메모</th>
+<th>이번 적립</th>
+<th>현재 도장 수</th>
 <th>관리</th>
 </tr>
 </thead>
 <tbody id="visitBody"></tbody>
 </table>
-
 <br>
 <button onclick="openVisitModal()">+ 회차 추가</button>
 </div>
@@ -192,7 +167,7 @@ padding:6px;
 <label>도장판 선택</label>
 <select id="vBoard"></select>
 
-<label>메모 (선택)</label>
+<label>메모</label>
 <input type="text" id="vMemo">
 
 <button onclick="saveVisit()">저장</button>
@@ -200,99 +175,95 @@ padding:6px;
 </div>
 </div>
 
-<!-- 할인권 모달 -->
-<div class="modal" id="couponModal">
-<div class="modal-content">
-<h3>할인권 추가 / 차감</h3>
-
-<select id="cType">
-<option value="add">추가</option>
-<option value="sub">차감</option>
-</select>
-
-<input type="number" id="cAmount" placeholder="수량">
-<input type="date" id="cDate">
-<input type="text" id="cMemo" placeholder="메모 (선택)">
-
-<button onclick="saveCoupon()">저장</button>
-<button onclick="closeCouponModal()">취소</button>
-</div>
-</div>
-
 <script>
-let data=JSON.parse(localStorage.getItem("greenV5"))||{
-boards:["도장판 1"],
+let data=JSON.parse(localStorage.getItem("greenV6"))||{
+boards:[{name:"도장판 1",stamps:0,got40:false,got6:false}],
 visits:[],
-coupon:{current:0,total:0,history:[]},
+coupon:{current:0,total:0},
 polaroid:0
 };
 
 function save(){
-localStorage.setItem("greenV5",JSON.stringify(data));
+localStorage.setItem("greenV6",JSON.stringify(data));
 render();
 }
 
 function addBoard(){
-data.boards.push("도장판 "+(data.boards.length+1));
+data.boards.push({name:"도장판 "+(data.boards.length+1),stamps:0,got40:false,got6:false});
 save();
 }
 
-function deleteBoard(i){
-data.boards.splice(i,1);
-save();
+function recalc(){
+data.boards.forEach(b=>{
+b.stamps=0;
+b.got40=false;
+b.got6=false;
+});
+data.coupon.current=0;
+data.coupon.total=0;
+data.polaroid=0;
+
+data.visits.forEach(v=>{
+let b=data.boards[v.board];
+b.stamps+=parseInt(v.multi);
+
+if(v.discount==="40%할인"){
+data.coupon.current--;
+}
+
+if(b.stamps>=3 && !b.got40){
+data.coupon.current++;
+data.coupon.total++;
+b.got40=true;
+}
+if(b.stamps>=6 && !b.got6){
+data.polaroid++;
+b.got6=true;
+}
+});
 }
 
 function render(){
-boardTabs.innerHTML="";
+recalc();
 boardCards.innerHTML="";
-vBoard.innerHTML="";
 visitBody.innerHTML="";
-
-let stampCount=Array(data.boards.length).fill(0);
+vBoard.innerHTML="";
 
 data.boards.forEach((b,i)=>{
-boardTabs.innerHTML+=`
-<div class="tab">${b}
-<button onclick="deleteBoard(${i})">✕</button>
-</div>`;
-
-vBoard.innerHTML+=`<option value="${i}">${b}</option>`;
+let next3=b.stamps<3?3-b.stamps:0;
+let next6=b.stamps<6?6-b.stamps:0;
 
 boardCards.innerHTML+=`
 <div class="board-card">
-<b>${b}</b><br>
-현재: <span id="count${i}">0</span>/6
+<b>${b.name}</b><br>
+현재 도장: ${b.stamps}/6<br>
+<span class="small">
+${b.stamps<3?`3개까지 ${next3}개 남음`:
+b.stamps<6?`6개까지 ${next6}개 남음`:
+`모든 혜택 달성`}
+</span>
 <div class="progress">
-<div class="bar" id="bar${i}" style="width:0%"></div>
+<div class="bar" style="width:${(b.stamps/6)*100}%"></div>
 </div>
 </div>`;
+
+vBoard.innerHTML+=`<option value="${i}">${b.name}</option>`;
 });
 
-data.visits.forEach((v,index)=>{
-stampCount[v.board]+=parseInt(v.multi);
+let tempCounts=Array(data.boards.length).fill(0);
+
+data.visits.forEach((v,i)=>{
+tempCounts[v.board]+=parseInt(v.multi);
 
 visitBody.innerHTML+=`
 <tr>
 <td>${v.date}</td>
 <td>${v.discount}</td>
+<td>${data.boards[v.board].name}</td>
 <td>${v.multi}</td>
-<td>${data.boards[v.board]}</td>
-<td>${v.memo||""}</td>
-<td><button onclick="deleteVisit(${index})">삭제</button></td>
+<td>${tempCounts[v.board]}</td>
+<td><button onclick="deleteVisit(${i})">삭제</button></td>
 </tr>`;
-});
-
-stampCount.forEach((c,i)=>{
-document.getElementById("count"+i).innerText=c;
-document.getElementById("bar"+i).style.width=(c/6*100)+"%";
-
-if(c>=3){
-data.coupon.current++;
-data.coupon.total++;
-}
-if(c>=6){
-data.polaroid++;
-}
 });
 
 couponCurrent.innerText=data.coupon.current;
@@ -302,8 +273,6 @@ polaroidTotal.innerText=data.polaroid;
 
 function openVisitModal(){visitModal.style.display="flex";}
 function closeVisitModal(){visitModal.style.display="none";}
-function openCouponModal(){couponModal.style.display="flex";}
-function closeCouponModal(){couponModal.style.display="none";}
 
 function saveVisit(){
 data.visits.push({
@@ -320,24 +289,6 @@ closeVisitModal();
 function deleteVisit(i){
 data.visits.splice(i,1);
 save();
-}
-
-function saveCoupon(){
-let amt=parseInt(cAmount.value);
-if(cType.value==="add"){
-data.coupon.current+=amt;
-data.coupon.total+=amt;
-}else{
-data.coupon.current-=amt;
-}
-data.coupon.history.push({
-type:cType.value,
-amount:amt,
-date:cDate.value,
-memo:cMemo.value
-});
-save();
-closeCouponModal();
 }
 
 render();
